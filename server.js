@@ -15,10 +15,25 @@ http.createServer(
 	// Again, stick to the documentation
 	(request, response) => {
 		switch (request.url) {
+			// Serving index.html on root request
             case '/':
                 fs.createReadStream(htmlPath).pipe(response);
 				break;
 			default:
+				// On other requests we are trying to find a file with
+				// passed path. If it is found, serve it.
+				// If not => 404
+				const filePath = path.join(__dirname, request.url);
+				// Checking for existence synchronously is not the best idea
+				// but for simplicity lets leave it
+				const fileExists = fs.existsSync(filePath);
+
+				if (fileExists) {
+					// Again a pipe. Looks neat, right?
+                	fs.createReadStream(filePath).pipe(response);
+					break;
+				}
+
                 response.write('404 Not Found\n');
 				response.end();
 		}

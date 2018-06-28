@@ -1,5 +1,5 @@
 ## Extremely simple example of a web application in pure Node.js / Javascript
 
-### STEP 2
+### STEP 3
 
-Lets make Node.js happen! What are we going to do with it? Well, we have a static file stored on the hard drive. Obviously, there should be a mechanism to pass it to browser. I suggest using Node.js to get this done
+Having script inline within HTML is not our choise. We can serve it with Node.js. Script is now also stored in the file system and served into the browser because we added a 'src' tag to the HTML. Now HTML looks neat and Javascript file looks neat. Also script might be queried and built-in somewhere else, how cool is that?
