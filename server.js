@@ -6,8 +6,10 @@ const path = require('path');
 
 // Build path to main HTML file at the very beginning
 const htmlPath = path.join(__dirname, 'public', 'index.html');
+// Initial data
+const todos = ['Buy milk', 'Brush teeth', 'Love mommy'];
 
-// Start a Http server. We are going to serve indes.html on root
+// Start a Http server. We are going to serve index.html on root
 // request and respond with 404 otherwise
 http.createServer(
 	// Requests handler. Two parameters - request/response
@@ -16,8 +18,52 @@ http.createServer(
 	(request, response) => {
 		switch (request.url) {
 			// Serving index.html on root request
-            case '/':
-                fs.createReadStream(htmlPath).pipe(response);
+			case '/':
+				fs.createReadStream(htmlPath).pipe(response);
+				break;
+			// Lets use /api/todos as an API endpoint
+			// We need to perform an action based on used request method
+			case '/api/todos':
+				switch (request.method) {
+					// Return list of todos
+					case 'GET':
+						response.writeHead(200, { "Content-Type": "application/json" });
+						response.end(JSON.stringify({ todos }));
+						break;
+					// Create a new todo. Data comes as an object with todo property
+					case 'POST':
+						// Remember, it is a stream. We are collecting data before using it
+						body = [];
+						request
+							.on('data', chunk => body.push(chunk))
+							.on('end', () => {
+								// Get object from passed data and store internally
+								body = JSON.parse(Buffer.concat(body).toString());
+								todos.push(body.todo);
+								response.writeHead(204);
+								response.end();
+							});
+						break;
+					// Remove a todo
+					case 'DELETE':
+						// Collecting data from stream
+						body = [];
+						request
+							.on('data', chunk => body.push(chunk))
+							.on('end', () => {
+								// Get object from passed data
+								body = JSON.parse(Buffer.concat(body).toString());
+								// Just looking for the same string internally
+								const index = todos.findIndex(el => el === body.todo);
+								if (index > -1) {
+									todos.splice(index, 1);
+								}
+
+								response.writeHead(204);
+								response.end();
+							});
+						break;
+				}
 				break;
 			default:
 				// On other requests we are trying to find a file with
@@ -30,12 +76,11 @@ http.createServer(
 
 				if (fileExists) {
 					// Again a pipe. Looks neat, right?
-                	fs.createReadStream(filePath).pipe(response);
+					fs.createReadStream(filePath).pipe(response);
 					break;
 				}
 
-                response.write('404 Not Found\n');
-				response.end();
+				response.end('404 Not Found\n');
 		}
 	}
 ).listen(3000, err => {

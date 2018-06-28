@@ -25,7 +25,14 @@ function buildRow(todo) {
         // every call of 'deleteRowFromTable' will get the latest value.
         // It means that we could have assigned 'onclick' handler right after
         // 'removeButton' creation
-        deleteRowFromTable(newRow);
+
+        // Sending body on DELETE is not a best practise but is not forbidden so let
+        // me cheat a little bit
+        fetch('http://localhost:3000/api/todos', {
+			body: JSON.stringify({todo}),
+			headers: { 'content-type': 'application/json' },
+			method: 'DELETE'
+		  }).then(() => deleteRowFromTable(newRow));
     };
 
     return newRow;
@@ -39,8 +46,16 @@ function addTodo() {
     const todo = todoContent.value;
 
     if (todo.length > 0) {
-        addRowToTable(buildRow(todo));
-        todoContent.value = '';
+        // Send POST request to the server with { todo: todoContent.value } object
+        // Update table contents upon completion
+        fetch('http://localhost:3000/api/todos', {
+			body: JSON.stringify({todo}),
+			headers: { 'content-type': 'application/json' },
+			method: 'POST'
+		  }).then(() => {
+			addRowToTable(buildRow(todo));
+			todoContent.value = '';
+		  });
     }
 }
 
@@ -59,3 +74,9 @@ function deleteRowFromTable(row) {
     const table = document.getElementById('todoTable');
     table.removeChild(row);
 }
+
+// Get initial data from server. Again, not the best way to perform it
+// For each retrieved TODO we are building a row and appending it to the table
+fetch('http://localhost:3000/api/todos')
+	.then(res => res.json())
+	.then(data => data.todos.forEach(todo => addRowToTable(buildRow(todo))));
